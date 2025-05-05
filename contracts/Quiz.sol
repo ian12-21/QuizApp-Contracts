@@ -2,29 +2,24 @@
 pragma solidity ^0.8.0;
 
 contract Quiz {
-    struct Player {
-        address playerAddress;
-        uint256 score;
-    }
 
-    address public creator;
-    uint256 public questionCount;
+    address private creator;
+    uint256 private questionCount;
+    bytes32 private answersHash;
     
-    mapping(address => Player) public players;
-    address[] public playerAddresses;
+    address[] private playerAddresses;
     
-    bytes32 public answersHash;
+    bool private isStarted;
+    bool private isFinished;
+    uint256 private startTime;
+
+    address private winner = address(0);
+    uint256 private winners_score = 0;
     
-    bool public isStarted;
-    bool public isFinished;
-    uint256 public startTime;
-    uint256 public currentQuestionIndex;
-    
-    uint256 public constant QUESTION_DURATION = 15 seconds;
-    uint256 public constant AUTO_DESTROY_DELAY = 24 hours;
+    uint256 private constant QUESTION_DURATION = 20 seconds;
+    uint256 private constant AUTO_DESTROY_DELAY = 24 hours;
     
     event QuizStarted(uint256 startTime);
-    event AnswerSubmitted(address player, uint256 questionIndex, bytes1 answer);
     event QuizFinished(address winner, uint256 score);
     
     modifier onlyCreator() {
@@ -37,38 +32,44 @@ contract Quiz {
         _;
     }
 
+    modifier quizEnded(){
+        require(isFinished, "Quiz not finished");
+        _;
+    }
+
     constructor(
         address _creator,
         uint256 _questionCount,
         bytes32 _answersHash
     ) {
+        require(questionCount > 0, "Invalid question count");
+        require(answersHash != keccak256(""), "Invalid answers hash");
+
         creator = _creator;
         questionCount = _questionCount;
         answersHash = _answersHash;
-
-        require(questionCount > 0, "Invalid question count");
-        require(answersHash != keccak256(""), "Invalid answers hash");
     }
 
     function startQuiz(address[] calldata _playerAddresses) external onlyCreator {
         require(!isStarted, "Quiz already started");
-        
+        require(_playerAddresses.length > 0, "No players joined");
+
         playerAddresses = _playerAddresses;
-        require(playerAddresses.length > 0, "No players joined");
-        
+
         isStarted = true;
         startTime = block.timestamp;
-        
+        isFinished = false;
+
         emit QuizStarted(startTime);
     }
     
-    function CalculateWinner(
+    function endQuiz(
         string calldata answers,
-        address[] calldata _players,
-        uint256[] calldata _scores
-    ) external onlyCreator returns (address) {
+        address _winner,
+        uint256 _score
+    ) external onlyCreator {
         require(isStarted && !isFinished, "Invalid quiz state");
-        require(_players.length == _scores.length, "Arrays length mismatch");
+        require(_score != 0 && _winner != address(0), "Invalid data inputed");
         require(
             block.timestamp > startTime + (questionCount * QUESTION_DURATION),
             "Quiz still in progress"
@@ -77,28 +78,19 @@ contract Quiz {
             keccak256(abi.encodePacked(answers)) == answersHash,
             "Invalid answers hash"
         );
-        
-        // Find winner from submitted scores
-        address winner = address(0);
-        uint256 highestScore = 0;
-        
-        // Only one loop needed, and it's O(n) where n is number of players
-        for (uint i = 0; i < _players.length; i++) {
-            
-            uint256 score = _scores[i];
-            // Store score for transparency
-            players[_players[i]].score = score;
-            
-            if (score > highestScore) {
-                highestScore = score;
-                winner = _players[i];
-            }
-        }
-        
+
+        winner = _winner;
+        winners_score = _score;
         
         isFinished = true;
-        emit QuizFinished(winner, highestScore);
-
-        return address(winner);
+        emit QuizFinished(winner, winners_score);
     }
+
+    function getFinishedQuizData() external quizEnded view returns(address, uint256){
+        require(isFinished, "Quiz not finished");
+        require(winner != address(0), "Quiz not finished");
+        return (winner, winners_score);
+    }
+
+
 }
