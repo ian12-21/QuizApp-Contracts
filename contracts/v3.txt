@@ -1,0 +1,55 @@
+Ključne poboljšanja:
+1. Optimizacija gas troškova
+
+Batch submission: Igrači šalju sve odgovore odjednom nakon kraja kviza
+Minimalne transakcije: Samo registracija, jedan submit i finalizacija
+Efficient storage: Optimizirane strukture podataka
+
+2. Live kviz workflow
+
+Registracija: Igrači se registriraju unaprijed
+Live gameplay: Kviz se odvija off-chain (WebSocket/real-time)
+Hash commitment: Odgovori se hash-aju i šalju na blockchain
+Verification: Creator verificira rezultate on-chain
+
+3. Dodatne funkcionalnosti
+Ekonomski model:
+
+Entry fee sustav s automatskom distribucijom nagrada
+Creator fee (5%) za održivost platforme
+Emergency refund funkcionalnost
+
+Poboljšana sigurnost:
+
+Commitment-reveal shema (hash pa reveal)
+Time windows za sve operacije
+Validacija podataka na više razina
+
+Better UX:
+
+Batch operacije umjesto pojedinačnih transakcija
+Jasni time windowi
+Event-based praćenje stanja
+
+4. Preporučena arhitektura aplikacije
+Frontend (React/Vue) 
+    ↕ Real-time (WebSocket)
+Backend Server (Node.js)
+    ↕ Web3 calls
+Blockchain (Smart Contracts)
+Live kviz flow:
+
+Creator kreira kviz → blockchain transakcija
+Igrači se registriraju → blockchain transakcije
+Live gameplay preko WebSocket-a (bez blockchain-a!)
+Odgovori se hash-aju lokalno
+Nakon kviza - batch submit hash-eva → blockchain
+Creator reveal-a rezultate → blockchain
+Automatska distribucija nagrada
+
+5. Prednosti ovog pristupa
+
+Minimal gas costs: Samo 2-3 transakcije po igraču
+Real-time experience: Live kviz bez čekanja blockchain potvrda
+Transparent & verifiable: Sve je provjerljivo on-chain
+User-friendly: Jednostavan za one koji ne poznaju blockchain
