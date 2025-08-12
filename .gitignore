@@ -1,0 +1,10 @@
+.idea
+node_modules
+build
+.venv
+package-lock.json
+deps
+states
+artifacts
+cache
+npm
