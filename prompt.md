@@ -22,3 +22,7 @@ zapisivanje pobjednika
 
 2.SOLUTION
 ako imamo entry fee, ide u prize pool, funkcije a dodjelu
+
+
+
+opcionalno factory moze hvatat feejeve jos
