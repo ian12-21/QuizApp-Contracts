@@ -5,7 +5,7 @@ pragma solidity ^0.8.19;
  * @title QuizWithFees - Version 2 (With Entry Fees)
  * @dev Quiz contract with entry fees and prize distribution
  */
-contract QuizWithFees {
+contract QuizWithFee {
     address private creator;
     uint256 private questionCount;
     bytes32 private answersHash;
@@ -33,9 +33,9 @@ contract QuizWithFees {
     bool public prizesDistributed;
     
     // Prize distribution (percentages in basis points: 10000 = 100%)
-    uint256 public constant WINNER_PERCENTAGE = 7000; // 70%
-    uint256 public constant CREATOR_PERCENTAGE = 2000; // 20%
-    uint256 public constant PLATFORM_PERCENTAGE = 1000; // 10%
+    uint256 public constant WINNER_PERCENTAGE = 8000; // 80%
+    uint256 public constant CREATOR_PERCENTAGE = 500; // 5%
+    uint256 public constant PLATFORM_PERCENTAGE = 1500; // 15%
     
     address public platformWallet;
     
@@ -71,7 +71,6 @@ contract QuizWithFees {
         require(_questionCount > 0 && _questionCount <= 32, "Invalid question count");
         require(_answersHash != bytes32(0), "Invalid answers hash");
         require(_entryFee > 0, "Entry fee must be greater than 0");
-        require(_platformWallet != address(0), "Invalid platform wallet");
 
         creator = _creator;
         questionCount = _questionCount;
@@ -218,22 +217,22 @@ contract QuizWithFees {
     /**
      * @dev Emergency refund (only if quiz hasn't started)
      */
-    function emergencyRefund() external onlyCreator {
-        require(!isStarted, "Cannot refund after quiz started");
-        require(prizePool > 0, "No funds to refund");
+    // function emergencyRefund() external onlyCreator {
+    //     require(!isStarted, "Cannot refund after quiz started");
+    //     require(prizePool > 0, "No funds to refund");
 
-        uint256 refundAmount = prizePool / playerAddresses.length;
+    //     uint256 refundAmount = prizePool / playerAddresses.length;
         
-        for (uint256 i = 0; i < playerAddresses.length; i++) {
-            if (hasPaid[playerAddresses[i]]) {
-                (bool success,) = payable(playerAddresses[i]).call{value: refundAmount}("");
-                require(success, "Refund failed");
-            }
-        }
+    //     for (uint256 i = 0; i < playerAddresses.length; i++) {
+    //         if (hasPaid[playerAddresses[i]]) {
+    //             (bool success,) = payable(playerAddresses[i]).call{value: refundAmount}("");
+    //             require(success, "Refund failed");
+    //         }
+    //     }
         
-        prizePool = 0;
-        isFinished = true;
-    }
+    //     prizePool = 0;
+    //     isFinished = true;
+    // }
 
     /**
      * @dev Get basic quiz info
@@ -243,8 +242,8 @@ contract QuizWithFees {
         uint256 questions,
         bool started,
         bool finished,
-        uint256 startedAt,
-        uint256 playersCount,
+        bytes32 quizAnswersHash,
+        address[] memory players,
         uint256 fee,
         uint256 pool
     ) {
@@ -253,8 +252,8 @@ contract QuizWithFees {
             questionCount,
             isStarted,
             isFinished,
-            startTime,
-            playerAddresses.length,
+            answersHash,
+            playerAddresses,
             entryFee,
             prizePool
         );
