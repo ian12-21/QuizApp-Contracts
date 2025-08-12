@@ -10,3 +10,15 @@ ključnim aspektima kviza, kao što su definiranje pitanja, prihvaćanje odgovor
 rezultata. Također će razviti jednostavno korisničko sučelje (npr. web aplikaciju) za interakciju
 korisnika s pametnim ugovorima. Projekt naglašava razumijevanje prednosti i izazova primjene
 blockchain tehnologije u ovom kontekstu.
+
+
+
+signer na backu da signa transakciju koju  bi dao useru, npr. spremiti odgovore korisnika. 
+<img width="512" height="754" alt="image" src="https://github.com/user-attachments/assets/07da44e8-758c-4355-9248-f745f40f7aef" />
+
+start,stop kviz
+to spremanje odgovora od strane posluzitelja na backu
+zapisivanje pobjednika
+
+2.SOLUTION
+ako imamo entry fee, ide u prize pool, funkcije a dodjelu
