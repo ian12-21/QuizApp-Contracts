@@ -8,3 +8,4 @@ states
 artifacts
 cache
 npm
+typechain-types

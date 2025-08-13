@@ -26,3 +26,18 @@ ako imamo entry fee, ide u prize pool, funkcije a dodjelu
 
 
 opcionalno factory moze hvatat feejeve jos
+
+
+# Install dependencies
+npm install --save-dev @nomicfoundation/hardhat-toolbox chai
+
+# Run all tests
+npx hardhat test
+
+# Run specific test file
+npx hardhat test test/Quiz.test.js
+npx hardhat test test/QuizFactory.test.js  
+npx hardhat test test/QuizWithFee.test.js
+
+# Run with gas reporting
+REPORT_GAS=true npx hardhat test
