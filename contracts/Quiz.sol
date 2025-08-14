@@ -68,7 +68,7 @@ contract Quiz {
      */
     function startQuiz(address[] calldata _playerAddresses) external onlyCreator {
         require(!isStarted, "Quiz already started");
-        require(_playerAddresses.length > 0, "No players joined");
+        require(_playerAddresses.length > 1, "Minimum 2 players required to start");
         require(_playerAddresses.length <= 100, "Too many players"); // Gas limit protection
 
         playerAddresses = _playerAddresses;
