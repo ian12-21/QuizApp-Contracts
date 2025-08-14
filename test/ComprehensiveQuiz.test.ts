@@ -92,10 +92,14 @@ describe("Comprehensive Quiz System Tests", function () {
       // Empty player list
       await expect(
         quiz.connect(creator).startQuiz([])
-      ).to.be.revertedWith("No players joined");
+      ).to.be.revertedWith("Minimum 2 players required to start");
 
       // Single player (should work)
-      await quiz.connect(creator).startQuiz([player1.address]);
+      await expect(
+        quiz.connect(creator).startQuiz([player1.address])
+      ).to.be.revertedWith("Minimum 2 players required to start");
+
+      await quiz.connect(creator).startQuiz([player1.address, player2.address]);
       
       const [, , started] = await quiz.getQuizInfo();
       expect(started).to.be.true;

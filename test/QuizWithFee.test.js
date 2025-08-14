@@ -200,10 +200,31 @@ describe("QuizWithFee Contract", function () {
             const initialCreatorBalance = await ethers.provider.getBalance(creator.address);
             const initialPlatformBalance = await ethers.provider.getBalance(platformWallet.address);
 
-            await expect(
-                quiz.connect(creator).endQuiz(correctAnswers, player1.address, 100)
-            ).to.emit(quiz, "QuizFinished")
-            .and.to.emit(quiz, "PrizesDistributed");
+            // Execute endQuiz and capture gas used
+            const tx = await quiz.connect(creator).endQuiz(correctAnswers, player1.address, 100);
+            const receipt = await tx.wait();
+            const gasUsed = receipt.gasUsed;
+            const gasPrice = tx.gasPrice;
+            const gasCost = gasUsed * gasPrice;
+
+            // Check that events were emitted
+            expect(receipt.logs.some(log => {
+                try {
+                    const parsed = quiz.interface.parseLog(log);
+                    return parsed?.name === "QuizFinished";
+                } catch {
+                    return false;
+                }
+            })).to.be.true;
+
+            expect(receipt.logs.some(log => {
+                try {
+                    const parsed = quiz.interface.parseLog(log);
+                    return parsed?.name === "PrizesDistributed";
+                } catch {
+                    return false;
+                }
+            })).to.be.true;
 
             // Check prize distribution
             const totalPrize = ENTRY_FEE * 3n;
@@ -215,8 +236,9 @@ describe("QuizWithFee Contract", function () {
             const finalCreatorBalance = await ethers.provider.getBalance(creator.address);
             const finalPlatformBalance = await ethers.provider.getBalance(platformWallet.address);
 
+            // Check prize distribution (accounting for gas costs for creator)
             expect(finalWinnerBalance - initialWinnerBalance).to.equal(winnerPrize);
-            expect(finalCreatorBalance - initialCreatorBalance).to.equal(creatorFee);
+            expect(finalCreatorBalance - initialCreatorBalance).to.equal(creatorFee - gasCost);
             expect(finalPlatformBalance - initialPlatformBalance).to.equal(platformFee);
 
             // Verify quiz results

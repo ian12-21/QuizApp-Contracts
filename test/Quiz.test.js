@@ -81,7 +81,7 @@ describe("Quiz Contract", function () {
         it("Should revert with no players", async function () {
             await expect(
                 quiz.connect(creator).startQuiz([])
-            ).to.be.revertedWith("No players joined");
+            ).to.be.revertedWith("Minimum 2 players required to start");
         });
 
         it("Should revert with too many players", async function () {
