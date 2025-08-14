@@ -287,4 +287,143 @@ describe("Quiz Contract", function () {
             ).to.be.revertedWith("Quiz not finished");
         });
     });
+
+    describe("Answer String Validation", function () {
+        it("Should validate correct answer string and reject incorrect ones", async function () {
+            // Create a specific answer string for testing (length must match QUESTION_COUNT = 5)
+            const testAnswers = "31425"; // 5 characters for 5 questions
+            const testAnswersHash = ethers.keccak256(ethers.toUtf8Bytes(testAnswers));
+            
+            // Deploy quiz with the test answer hash
+            const testQuiz = await Quiz.deploy(creator.address, QUESTION_COUNT, testAnswersHash);
+            await testQuiz.waitForDeployment();
+            
+            // Start quiz with players
+            const players = [player1.address, player2.address];
+            await testQuiz.connect(creator).startQuiz(players);
+            
+            // Submit answers
+            const answers = [0x31425, 0x12345];
+            const scores = [100, 80];
+            await testQuiz.connect(creator).submitAllAnswers(players, answers, scores);
+            
+            // Fast forward time
+            await ethers.provider.send("evm_increaseTime", [QUESTION_COUNT * 20]);
+            await ethers.provider.send("evm_mine");
+            
+            // Test with wrong answer string (correct length but wrong content) - should fail
+            const wrongAnswers = "12143"; // Same length but different content
+            await expect(
+                testQuiz.connect(creator).endQuiz(wrongAnswers, player1.address, 100)
+            ).to.be.revertedWith("Invalid answers hash");
+            
+            // Test with wrong length answer string - should fail with length mismatch
+            const wrongLengthAnswers = "123"; // Too short
+            await expect(
+                testQuiz.connect(creator).endQuiz(wrongLengthAnswers, player1.address, 100)
+            ).to.be.revertedWith("Length mismatch");
+            
+            // Test with another wrong length - should fail with length mismatch
+            const tooLongAnswers = "1234567"; // Too long
+            await expect(
+                testQuiz.connect(creator).endQuiz(tooLongAnswers, player1.address, 100)
+            ).to.be.revertedWith("Length mismatch");
+            
+            // Test with correct answer string - should succeed
+            await expect(
+                testQuiz.connect(creator).endQuiz(testAnswers, player1.address, 100)
+            ).to.emit(testQuiz, "QuizFinished")
+            .withArgs(player1.address, 100);
+            
+            // Verify quiz is finished and results are correct
+            const [winnerAddr, winnerScore, totalPlayers, endTime] = 
+                await testQuiz.getQuizResults();
+            
+            expect(winnerAddr).to.equal(player1.address);
+            expect(winnerScore).to.equal(100);
+            expect(totalPlayers).to.equal(2);
+        });
+
+        it("Should handle different question counts with proper length validation", async function () {
+            // Test with 1 question
+            const singleAnswers = "3"; // 1 character for 1 question
+            const singleHash = ethers.keccak256(ethers.toUtf8Bytes(singleAnswers));
+            const singleQuiz = await Quiz.deploy(creator.address, 1, singleHash);
+            await singleQuiz.waitForDeployment();
+            
+            const players = [player1.address, player2.address];
+            await singleQuiz.connect(creator).startQuiz(players);
+            
+            const answers = [0x3, 0x2];
+            const scores = [100, 80];
+            await singleQuiz.connect(creator).submitAllAnswers(players, answers, scores);
+            
+            await ethers.provider.send("evm_increaseTime", [1 * 20]);
+            await ethers.provider.send("evm_mine");
+            
+            // Should work with correct length (1 character)
+            await expect(
+                singleQuiz.connect(creator).endQuiz(singleAnswers, player1.address, 100)
+            ).to.emit(singleQuiz, "QuizFinished");
+            
+            // Test with 3 questions
+            const tripleAnswers = "142"; // 3 characters for 3 questions
+            const tripleHash = ethers.keccak256(ethers.toUtf8Bytes(tripleAnswers));
+            const tripleQuiz = await Quiz.deploy(creator.address, 3, tripleHash);
+            await tripleQuiz.waitForDeployment();
+            
+            await tripleQuiz.connect(creator).startQuiz(players);
+            await tripleQuiz.connect(creator).submitAllAnswers(players, [0x142, 0x241], [90, 85]);
+            
+            await ethers.provider.send("evm_increaseTime", [3 * 20]);
+            await ethers.provider.send("evm_mine");
+            
+            // Should work with correct length (3 characters)
+            await expect(
+                tripleQuiz.connect(creator).endQuiz(tripleAnswers, player1.address, 90)
+            ).to.emit(tripleQuiz, "QuizFinished");
+        });
+
+        it("Should reject empty strings and enforce length validation", async function () {
+            // Test with empty string - should fail deployment validation first
+            const emptyStringHash = ethers.keccak256(ethers.toUtf8Bytes(""));
+            
+            // Empty string hash is valid for deployment (not bytes32(0))
+            const emptyStringQuiz = await Quiz.deploy(creator.address, QUESTION_COUNT, emptyStringHash);
+            await emptyStringQuiz.waitForDeployment();
+            
+            const players = [player1.address, player2.address];
+            await emptyStringQuiz.connect(creator).startQuiz(players);
+            await emptyStringQuiz.connect(creator).submitAllAnswers(players, [0x1, 0x2], [100, 80]);
+            
+            await ethers.provider.send("evm_increaseTime", [QUESTION_COUNT * 20]);
+            await ethers.provider.send("evm_mine");
+            
+            // Empty string should fail length validation (0 != QUESTION_COUNT)
+            await expect(
+                emptyStringQuiz.connect(creator).endQuiz("", player1.address, 100)
+            ).to.be.revertedWith("Length mismatch");
+        });
+
+        it("Should reject zero hash during deployment", async function () {
+            // Test with bytes32(0) - should fail deployment
+            await expect(
+                Quiz.deploy(creator.address, QUESTION_COUNT, ethers.ZeroHash)
+            ).to.be.revertedWith("Invalid answers hash");
+
+            // Test with valid hash - should succeed
+            const validAnswers = "12345"; // Correct length for QUESTION_COUNT
+            const validHash = ethers.keccak256(ethers.toUtf8Bytes(validAnswers));
+            const validQuiz = await Quiz.deploy(creator.address, QUESTION_COUNT, validHash);
+            await validQuiz.waitForDeployment();
+            
+            // Verify quiz was created successfully
+            const [creatorAddr, questions, started, finished, quizHash] = await validQuiz.getQuizInfo();
+            expect(creatorAddr).to.equal(creator.address);
+            expect(questions).to.equal(QUESTION_COUNT);
+            expect(quizHash).to.equal(validHash);
+            expect(started).to.be.false;
+            expect(finished).to.be.false;
+        });
+    });
 });

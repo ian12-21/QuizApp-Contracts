@@ -126,6 +126,10 @@ contract Quiz {
             block.timestamp >= startTime + (questionCount * QUESTION_DURATION),
             "Quiz still in progress"
         );
+
+        bytes memory ca = bytes(correctAnswers);
+        require(ca.length == questionCount, "Length mismatch"); // prevents empty and malformed reveals
+
         require(
             keccak256(abi.encodePacked(correctAnswers)) == answersHash,
             "Invalid answers hash"
@@ -134,9 +138,10 @@ contract Quiz {
         winner = _winner;
         winnersScore = _score;
         isFinished = true;
-        
+
         emit QuizFinished(winner, winnersScore);
     }
+
 
     /**
      * @dev Get quiz results
