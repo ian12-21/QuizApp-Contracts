@@ -9,3 +9,4 @@ artifacts
 cache
 npm
 typechain-types
+prompt.md
