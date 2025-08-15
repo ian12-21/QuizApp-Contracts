@@ -23,7 +23,7 @@ contract Quiz {
     // Store all player answers efficiently
     // Using packed struct to save gas
     struct PlayerAnswers {
-        uint128 answers; // Can store up to 32 answers (4 bits each, 0-15 values)
+        string answers; 
         uint128 score;
     }
     mapping(address => PlayerAnswers) private playerAnswers;
@@ -55,7 +55,7 @@ contract Quiz {
         uint256 _questionCount,
         bytes32 _answersHash
     ) {
-        require(_questionCount > 0 && _questionCount <= 32, "Invalid question count (1-32)");
+        require(_questionCount > 0 && _questionCount <= 50, "Invalid question count (1-50)");
         require(_answersHash != bytes32(0), "Invalid answers hash");
 
         creator = _creator;
@@ -93,7 +93,7 @@ contract Quiz {
      */
     function submitAllAnswers(
         address[] calldata players,
-        uint128[] calldata answers,
+        string[] calldata answers,
         uint128[] calldata scores
     ) external onlyCreator quizActive {
         require(players.length == answers.length && players.length == scores.length, "Arrays length mismatch");
@@ -164,7 +164,7 @@ contract Quiz {
      * @dev Get player's answers and score
      */
     function getPlayerResults(address player) external view quizEnded returns (
-        uint128 answers,
+        string memory answers,
         uint128 score
     ) {
         require(playerIndexes[player] > 0, "Player not found");
@@ -200,12 +200,12 @@ contract Quiz {
         );
     }
 
-    /**
-     * @dev Emergency stop (only creator)
-     */
-    // function emergencyStop() external onlyCreator {
-    //     require(isStarted && !isFinished, "Cannot stop quiz in current state");
-    //     isFinished = true;
-    //     emit QuizFinished(address(0), 0); // No winner in emergency stop
-    // }
+    //helper function that are called before initializing the quiz
+    function getIsStarted() external view returns (bool) {
+        return isStarted;
+    }
+
+    function getIsFinished() external view returns (bool) {
+        return isFinished;
+    }
 }
