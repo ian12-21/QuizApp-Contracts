@@ -85,17 +85,15 @@ Extends the basic contract with economic incentives:
 
 ```mermaid
 flowchart TD
-  F[QuizFactory]
-  Q1[Quiz (free)]
-  Q2[QuizWithFee (paid)]
-  User -- "deploys via" --> F
-  F -- "deploys" --> Q1
-  F -- "deploys" --> Q2
-  User -- "joins/starts/answers" --> Q1
-  User -- "joins/starts/answers" --> Q2
-  Q2 -- "prize distribution" --> Winner
-  Q2 -- "prize distribution" --> Creator
-  Q2 -- "prize distribution" --> Platform
+  QuizFactory
+  QuizFactory --> Quiz_Free["Quiz (free)"]
+  QuizFactory --> Quiz_Paid["QuizWithFee (paid)"]
+  User -- deploys via --> QuizFactory
+  User -- joins/starts/answers --> Quiz_Free
+  User -- joins/starts/answers --> Quiz_Paid
+  Quiz_Paid -- prize distribution --> Winner
+  Quiz_Paid -- prize distribution --> Creator
+  Quiz_Paid -- prize distribution --> Platform
 ```
 
 ---
