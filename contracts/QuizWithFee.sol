@@ -33,9 +33,9 @@ contract QuizWithFee {
     bool public prizesDistributed;
     
     // Prize distribution (percentages in basis points: 10000 = 100%)
-    uint256 public constant WINNER_PERCENTAGE = 8000; // 80%
+    uint256 public constant WINNER_PERCENTAGE = 8500; // 85%
     uint256 public constant CREATOR_PERCENTAGE = 500; // 5%
-    uint256 public constant PLATFORM_PERCENTAGE = 1500; // 15%
+    uint256 public constant PLATFORM_PERCENTAGE = 1000; // 10%
     
     address public platformWallet;
     
@@ -68,7 +68,7 @@ contract QuizWithFee {
         uint256 _entryFee,
         address _platformWallet
     ) {
-        require(_questionCount > 0 && _questionCount <= 32, "Invalid question count");
+        require(_questionCount > 0 && _questionCount <= 50, "Invalid question count");
         require(_answersHash != bytes32(0), "Invalid answers hash");
         require(_entryFee > 0, "Entry fee must be greater than 0");
 

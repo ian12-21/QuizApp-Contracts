@@ -35,11 +35,11 @@ describe("Quiz Contract", function () {
         it("Should revert with invalid parameters", async function () {
             await expect(
                 Quiz.deploy(creator.address, 0, answersHash)
-            ).to.be.revertedWith("Invalid question count (1-32)");
+            ).to.be.revertedWith("Invalid question count (1-50)");
 
             await expect(
-                Quiz.deploy(creator.address, 33, answersHash)
-            ).to.be.revertedWith("Invalid question count (1-32)");
+                Quiz.deploy(creator.address, 51, answersHash)
+            ).to.be.revertedWith("Invalid question count (1-50)");
 
             await expect(
                 Quiz.deploy(creator.address, QUESTION_COUNT, ethers.ZeroHash)
@@ -104,7 +104,7 @@ describe("Quiz Contract", function () {
         });
 
         it("Should submit all answers correctly", async function () {
-            const answers = [0x12143, 0x21434, 0x31241]; // Packed answers
+            const answers = ["12143", "21434", "31241"]; // String answers
             const scores = [100, 80, 60];
 
             await expect(
@@ -118,7 +118,7 @@ describe("Quiz Contract", function () {
         });
 
         it("Should revert if not creator", async function () {
-            const answers = [0x12143];
+            const answers = ["12143"];
             const scores = [100];
 
             await expect(
@@ -129,7 +129,7 @@ describe("Quiz Contract", function () {
         it("Should revert if quiz not active", async function () {
             // Try before starting
             const newQuiz = await Quiz.deploy(creator.address, QUESTION_COUNT, answersHash);
-            const answers = [0x12143];
+            const answers = ["12143"];
             const scores = [100];
 
             await expect(
@@ -138,7 +138,7 @@ describe("Quiz Contract", function () {
         });
 
         it("Should revert with mismatched arrays", async function () {
-            const answers = [0x12143, 0x21434];
+            const answers = ["12143", "21434"];
             const scores = [100]; // Different length
 
             await expect(
@@ -147,11 +147,11 @@ describe("Quiz Contract", function () {
         });
 
         it("Should revert for unregistered player", async function () {
-            const answers = [0x12143];
-            const scores = [100];
+            const answers = ["12143", "21434", "31241"];
+            const scores = [100, 80, 60];
 
             await expect(
-                quiz.connect(creator).submitAllAnswers([nonPlayer.address], answers, scores)
+                quiz.connect(creator).submitAllAnswers([nonPlayer.address, player1.address, player2.address], answers, scores)
             ).to.be.revertedWith("Player not registered");
         });
     });
@@ -164,7 +164,7 @@ describe("Quiz Contract", function () {
             await quiz.connect(creator).startQuiz(players);
             
             // Submit answers
-            const answers = [0x12143, 0x21434, 0x31241];
+            const answers = ["12143", "21434", "31241"];
             const scores = [100, 80, 60];
             await quiz.connect(creator).submitAllAnswers(players, answers, scores);
         });
@@ -252,7 +252,7 @@ describe("Quiz Contract", function () {
             players = [player1.address, player2.address, player3.address];
             await quiz.connect(creator).startQuiz(players);
             
-            const answers = [0x12143, 0x21434, 0x31241];
+            const answers = ["12143", "21434", "31241"];
             const scores = [100, 80, 60];
             await quiz.connect(creator).submitAllAnswers(players, answers, scores);
             
@@ -264,7 +264,7 @@ describe("Quiz Contract", function () {
 
         it("Should get player results correctly", async function () {
             const [answers, score] = await quiz.getPlayerResults(player1.address);
-            expect(answers).to.equal(0x12143);
+            expect(answers).to.equal("12143");
             expect(score).to.equal(100);
         });
 
@@ -303,7 +303,7 @@ describe("Quiz Contract", function () {
             await testQuiz.connect(creator).startQuiz(players);
             
             // Submit answers
-            const answers = [0x31425, 0x12345];
+            const answers = ["12143", "21434"];
             const scores = [100, 80];
             await testQuiz.connect(creator).submitAllAnswers(players, answers, scores);
             
@@ -354,7 +354,7 @@ describe("Quiz Contract", function () {
             const players = [player1.address, player2.address];
             await singleQuiz.connect(creator).startQuiz(players);
             
-            const answers = [0x3, 0x2];
+            const answers = ["3", "2"];
             const scores = [100, 80];
             await singleQuiz.connect(creator).submitAllAnswers(players, answers, scores);
             
@@ -373,7 +373,7 @@ describe("Quiz Contract", function () {
             await tripleQuiz.waitForDeployment();
             
             await tripleQuiz.connect(creator).startQuiz(players);
-            await tripleQuiz.connect(creator).submitAllAnswers(players, [0x142, 0x241], [90, 85]);
+            await tripleQuiz.connect(creator).submitAllAnswers(players, ["142", "241"], [90, 85]);
             
             await ethers.provider.send("evm_increaseTime", [3 * 20]);
             await ethers.provider.send("evm_mine");
@@ -394,7 +394,7 @@ describe("Quiz Contract", function () {
             
             const players = [player1.address, player2.address];
             await emptyStringQuiz.connect(creator).startQuiz(players);
-            await emptyStringQuiz.connect(creator).submitAllAnswers(players, [0x1, 0x2], [100, 80]);
+            await emptyStringQuiz.connect(creator).submitAllAnswers(players, ["1", "2"], [100, 80]);
             
             await ethers.provider.send("evm_increaseTime", [QUESTION_COUNT * 20]);
             await ethers.provider.send("evm_mine");

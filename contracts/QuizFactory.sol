@@ -30,7 +30,7 @@ contract QuizFactory {
         uint256 questionCount,
         bytes32 answersHash
     ) external returns (address) {
-        require(questionCount > 0, "Invalid question count");
+        require(questionCount > 0 && questionCount <= 50, "Invalid question count (1-50)");
         require(answersHash != keccak256(""), "Invalid answers hash");
 
         Quiz quiz = new Quiz(
@@ -52,7 +52,7 @@ contract QuizFactory {
         uint256 entryFee
     ) external returns (address) {
         require(entryFee > 0, "Entry fee must be greater than 0");
-        require(questionCount > 0, "Invalid question count");
+        require(questionCount > 0 && questionCount <= 50, "Invalid question count (1-50)");
         require(answersHash != keccak256(""), "Invalid answers hash");
         
         QuizWithFee quiz = new QuizWithFee(

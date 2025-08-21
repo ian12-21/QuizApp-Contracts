@@ -70,7 +70,11 @@ describe("Basic Quiz System Tests", function () {
     // Invalid question count
     await expect(
       quizFactory.connect(creator).createBasicQuiz(0, answersHash)
-    ).to.be.revertedWith("Invalid question count");
+    ).to.be.revertedWith("Invalid question count (1-50)");
+    
+    await expect(
+      quizFactory.connect(creator).createBasicQuiz(51, answersHash)
+    ).to.be.revertedWith("Invalid question count (1-50)");
 
     // Invalid answers hash (empty string)
     await expect(

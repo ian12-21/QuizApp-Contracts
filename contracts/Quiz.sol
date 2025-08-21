@@ -97,7 +97,7 @@ contract Quiz {
         uint128[] calldata scores
     ) external onlyCreator quizActive {
         require(players.length == answers.length && players.length == scores.length, "Arrays length mismatch");
-        require(players.length <= playerAddresses.length, "Too many players");
+        require(players.length == playerAddresses.length, "Number of players does not match");
         
         for (uint256 i = 0; i < players.length; i++) {
             require(playerIndexes[players[i]] > 0, "Player not registered");

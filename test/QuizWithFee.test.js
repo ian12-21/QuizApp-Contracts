@@ -45,6 +45,10 @@ describe("QuizWithFee Contract", function () {
             await expect(
                 QuizWithFee.deploy(creator.address, 0, answersHash, ENTRY_FEE, platformWallet.address)
             ).to.be.revertedWith("Invalid question count");
+            
+            await expect(
+                QuizWithFee.deploy(creator.address, 51, answersHash, ENTRY_FEE, platformWallet.address)
+            ).to.be.revertedWith("Invalid question count");
 
             await expect(
                 QuizWithFee.deploy(creator.address, QUESTION_COUNT, ethers.ZeroHash, ENTRY_FEE, platformWallet.address)
@@ -186,7 +190,7 @@ describe("QuizWithFee Contract", function () {
 
         it("Should submit answers and end quiz with prize distribution", async function () {
             const players = [player1.address, player2.address, player3.address];
-            const answers = [0x12143, 0x21434, 0x31241];
+            const answers = ["12143", "21434", "31241"];
             const scores = [100, 80, 60];
 
             await quiz.connect(creator).submitAllAnswers(players, answers, scores);
@@ -228,9 +232,9 @@ describe("QuizWithFee Contract", function () {
 
             // Check prize distribution
             const totalPrize = ENTRY_FEE * 3n;
-            const winnerPrize = (totalPrize * 8000n) / 10000n; // 80%
+            const winnerPrize = (totalPrize * 8500n) / 10000n; // 85%
             const creatorFee = (totalPrize * 500n) / 10000n;   // 5%
-            const platformFee = (totalPrize * 1500n) / 10000n; // 15%
+            const platformFee = (totalPrize * 1000n) / 10000n; // 10%
 
             const finalWinnerBalance = await ethers.provider.getBalance(player1.address);
             const finalCreatorBalance = await ethers.provider.getBalance(creator.address);
@@ -254,7 +258,7 @@ describe("QuizWithFee Contract", function () {
 
         it("Should get player results correctly", async function () {
             const players = [player1.address, player2.address];
-            const answers = [0x12143, 0x21434];
+            const answers = ["12143", "21434"];
             const scores = [100, 80];
 
             await quiz.connect(creator).submitAllAnswers(players, answers, scores);
@@ -267,14 +271,14 @@ describe("QuizWithFee Contract", function () {
             const [playerAnswers, playerScore, paidEntry] = 
                 await quiz.getPlayerResults(player1.address);
             
-            expect(playerAnswers).to.equal(0x12143);
+            expect(playerAnswers).to.equal("12143");
             expect(playerScore).to.equal(100);
             expect(paidEntry).to.be.true;
         });
 
         it("Should revert ending quiz too early", async function () {
             const players = [player1.address];
-            const answers = [0x12143];
+            const answers = ["12143"];
             const scores = [100];
 
             await quiz.connect(creator).submitAllAnswers(players, answers, scores);
@@ -311,7 +315,7 @@ describe("QuizWithFee Contract", function () {
             await quiz.connect(creator).startQuiz();
             
             const players = [player1.address, player2.address];
-            const answers = [0x12143, 0x21434];
+            const answers = ["12143", "21434"];
             const scores = [100, 80];
             await quiz.connect(creator).submitAllAnswers(players, answers, scores);
             
@@ -356,12 +360,12 @@ describe("QuizWithFee Contract", function () {
 
     describe("Constants and Percentages", function () {
         it("Should have correct percentage constants", async function () {
-            expect(await quiz.WINNER_PERCENTAGE()).to.equal(8000);
+            expect(await quiz.WINNER_PERCENTAGE()).to.equal(8500);
             expect(await quiz.CREATOR_PERCENTAGE()).to.equal(500);
-            expect(await quiz.PLATFORM_PERCENTAGE()).to.equal(1500);
+            expect(await quiz.PLATFORM_PERCENTAGE()).to.equal(1000);
             
             // Should add up to 100%
-            const total = 8000 + 500 + 1500;
+            const total = 8500 + 500 + 1000;
             expect(total).to.equal(10000);
         });
     });

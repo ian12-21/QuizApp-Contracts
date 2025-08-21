@@ -66,7 +66,11 @@ describe("QuizFactory Contract", function () {
         it("Should revert with invalid question count", async function () {
             await expect(
                 quizFactory.connect(creator).createBasicQuiz(0, answersHash)
-            ).to.be.revertedWith("Invalid question count");
+            ).to.be.revertedWith("Invalid question count (1-50)");
+            
+            await expect(
+                quizFactory.connect(creator).createBasicQuiz(51, answersHash)
+            ).to.be.revertedWith("Invalid question count (1-50)");
         });
 
         it("Should revert with invalid answers hash", async function () {
@@ -148,11 +152,21 @@ describe("QuizFactory Contract", function () {
                 quizFactory.connect(creator).createPaidQuiz(QUESTION_COUNT, answersHash, 0)
             ).to.be.revertedWith("Entry fee must be greater than 0");
         });
+        
+        it("Should revert with invalid question count for paid quiz", async function () {
+            await expect(
+                quizFactory.connect(creator).createPaidQuiz(0, answersHash, ENTRY_FEE)
+            ).to.be.revertedWith("Invalid question count (1-50)");
+            
+            await expect(
+                quizFactory.connect(creator).createPaidQuiz(51, answersHash, ENTRY_FEE)
+            ).to.be.revertedWith("Invalid question count (1-50)");
+        });
 
         it("Should revert with invalid question count", async function () {
             await expect(
                 quizFactory.connect(creator).createPaidQuiz(0, answersHash, ENTRY_FEE)
-            ).to.be.revertedWith("Invalid question count");
+            ).to.be.revertedWith("Invalid question count (1-50)");
         });
 
         it("Should revert with invalid answers hash", async function () {
@@ -294,7 +308,7 @@ describe("QuizFactory Contract", function () {
 
     describe("Edge Cases", function () {
         it("Should handle maximum question count", async function () {
-            const maxQuestions = 32;
+            const maxQuestions = 50;
             
             await expect(
                 quizFactory.connect(creator).createBasicQuiz(maxQuestions, answersHash)

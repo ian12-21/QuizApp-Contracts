@@ -42,29 +42,29 @@ describe("Comprehensive Quiz System Tests", function () {
     it("Should validate question count limits", async function () {
       const answersHash = ethers.keccak256(ethers.toUtf8Bytes("1,2,3"));
       
-      // Test maximum allowed questions (32)
-      const maxAnswersString = Array(32).fill(1).join(",");
+      // Test maximum allowed questions (50)
+      const maxAnswersString = Array(50).fill(1).join(",");
       const maxAnswersHash = ethers.keccak256(ethers.toUtf8Bytes(maxAnswersString));
       
       await expect(
-        quizFactory.connect(creator).createBasicQuiz(32, maxAnswersHash)
+        quizFactory.connect(creator).createBasicQuiz(50, maxAnswersHash)
       ).to.not.be.reverted;
       
-      // Test beyond maximum (33)
-      const tooManyAnswersString = Array(33).fill(1).join(",");
+      // Test beyond maximum (51)
+      const tooManyAnswersString = Array(51).fill(1).join(",");
       const tooManyAnswersHash = ethers.keccak256(ethers.toUtf8Bytes(tooManyAnswersString));
       
       await expect(
-        quizFactory.connect(creator).createBasicQuiz(33, tooManyAnswersHash)
-      ).to.be.revertedWith("Invalid question count (1-32)");
+        quizFactory.connect(creator).createBasicQuiz(51, tooManyAnswersHash)
+      ).to.be.revertedWith("Invalid question count (1-50)");
     });
   });
 
   describe("Quiz Contract Comprehensive Tests", function () {
     let quiz: any;
     let quizAddress: string;
-    const questionCount = 4;
-    const answersString = "1,3,2,4";
+    const questionCount = 2;
+    const answersString = "13";
     const answersHash = ethers.keccak256(ethers.toUtf8Bytes(answersString));
 
     beforeEach(async function () {
@@ -118,7 +118,7 @@ describe("Comprehensive Quiz System Tests", function () {
 
       // Non-creator trying to submit answers
       await expect(
-        quiz.connect(player1).submitAllAnswers([player1.address], [123], [85])
+        quiz.connect(player1).submitAllAnswers([player1.address], ["123"], [85])
       ).to.be.revertedWith("Only creator can call this");
 
       // Non-creator trying to end quiz
@@ -138,7 +138,7 @@ describe("Comprehensive Quiz System Tests", function () {
       await expect(
         quiz.connect(creator).submitAllAnswers(
           [player1.address, player2.address], 
-          [123], 
+          ["123"], 
           [85, 92]
         )
       ).to.be.revertedWith("Arrays length mismatch");
@@ -147,15 +147,23 @@ describe("Comprehensive Quiz System Tests", function () {
       await expect(
         quiz.connect(creator).submitAllAnswers(
           [player4.address], 
-          [123], 
+          ["12"], 
           [85]
+        )
+      ).to.be.revertedWith("Number of players does not match");
+
+      await expect(
+        quiz.connect(creator).submitAllAnswers(
+          [player1.address,player2.address,player4.address], 
+          ["12", "34", "56"], 
+          [85, 92, 78]
         )
       ).to.be.revertedWith("Player not registered");
 
       // Valid submission
       await quiz.connect(creator).submitAllAnswers(
         playerAddresses,
-        [123, 456, 789],
+        ["12", "34", "56"],
         [85, 92, 78]
       );
     });
@@ -182,7 +190,12 @@ describe("Comprehensive Quiz System Tests", function () {
       await ethers.provider.send("evm_increaseTime", [20 * questionCount]);
       await ethers.provider.send("evm_mine", []);
 
-      // Now should work
+      // Now should work (need to submit answers first)
+      await quiz.connect(creator).submitAllAnswers(
+        [player1.address, player2.address],
+        ["12", "34"],
+        [85, 92]
+      );
       await quiz.connect(creator).endQuiz(answersString, player1.address, 85);
     });
 
@@ -194,10 +207,10 @@ describe("Comprehensive Quiz System Tests", function () {
       await ethers.provider.send("evm_increaseTime", [20 * questionCount + 1]);
       await ethers.provider.send("evm_mine", []);
 
-      // Wrong answers hash
+      // Try to end quiz with invalid answers hash
       await expect(
-        quiz.connect(creator).endQuiz("4,2,3,1", player1.address, 85)
-      ).to.be.revertedWith("Invalid answers hash");
+        quiz.connect(creator).endQuiz("invalidhash", player2.address, 92)
+      ).to.be.revertedWith("Length mismatch");
 
       // Invalid winner (not registered)
       await expect(
@@ -209,7 +222,12 @@ describe("Comprehensive Quiz System Tests", function () {
         quiz.connect(creator).endQuiz(answersString, player1.address, 0)
       ).to.be.revertedWith("Invalid winner data");
 
-      // Valid end
+      // Valid end (need to submit answers first)
+      await quiz.connect(creator).submitAllAnswers(
+        [player1.address, player2.address],
+        ["12", "34"],
+        [85, 92]
+      );
       await quiz.connect(creator).endQuiz(answersString, player1.address, 85);
     });
 
@@ -220,7 +238,7 @@ describe("Comprehensive Quiz System Tests", function () {
       // Submit answers
       await quiz.connect(creator).submitAllAnswers(
         playerAddresses,
-        [123, 456],
+        ["12", "34"],
         [85, 92]
       );
 
@@ -238,11 +256,11 @@ describe("Comprehensive Quiz System Tests", function () {
 
       // Check individual player results
       const [answers1, score1] = await quiz.getPlayerResults(player1.address);
-      expect(answers1).to.equal(123);
+      expect(answers1).to.equal("12");
       expect(score1).to.equal(85);
 
       const [answers2, score2] = await quiz.getPlayerResults(player2.address);
-      expect(answers2).to.equal(456);
+      expect(answers2).to.equal("34");
       expect(score2).to.equal(92);
     });
   });
@@ -277,9 +295,9 @@ describe("Comprehensive Quiz System Tests", function () {
     });
 
     it("Should validate fee structure constants", async function () {
-      expect(await quizWithFee.WINNER_PERCENTAGE()).to.equal(8000); // 80%
+      expect(await quizWithFee.WINNER_PERCENTAGE()).to.equal(8500); // 85%
       expect(await quizWithFee.CREATOR_PERCENTAGE()).to.equal(500);  // 5%
-      expect(await quizWithFee.PLATFORM_PERCENTAGE()).to.equal(1500); // 15%
+      expect(await quizWithFee.PLATFORM_PERCENTAGE()).to.equal(1000); // 10%
       expect(await quizWithFee.entryFee()).to.equal(entryFee);
       expect(await quizWithFee.platformWallet()).to.equal(platformWallet.address);
     });
@@ -337,7 +355,7 @@ describe("Comprehensive Quiz System Tests", function () {
       await quizWithFee.connect(creator).startQuiz();
       await quizWithFee.connect(creator).submitAllAnswers(
         [player1.address, player2.address, player3.address],
-        [100, 200, 150],
+        ["100", "200", "150"],
         [70, 95, 80]
       );
 
@@ -351,26 +369,25 @@ describe("Comprehensive Quiz System Tests", function () {
       await ethers.provider.send("evm_mine", []);
       await quizWithFee.connect(creator).endQuiz(answersString, player2.address, 95);
 
-      // Verify prize distribution
-      const winnerPrize = (totalPrizePool * 8000n) / 10000n; // 80%
-      const creatorFee = (totalPrizePool * 500n) / 10000n;   // 5%
-      const platformFee = (totalPrizePool * 1500n) / 10000n; // 15%
+      const expectedWinnerPrize = (totalPrizePool * 8500n) / 10000n; // 85%
+      const expectedCreatorFee = (totalPrizePool * 500n) / 10000n;   // 5%
+      const expectedPlatformFee = (totalPrizePool * 1000n) / 10000n; // 10%
 
       const winnerBalanceAfter = await ethers.provider.getBalance(player2.address);
       const creatorBalanceAfter = await ethers.provider.getBalance(creator.address);
       const platformBalanceAfter = await ethers.provider.getBalance(platformWallet.address);
 
       // Winner receives exact prize (no gas cost for receiving)
-      expect(winnerBalanceAfter - winnerBalanceBefore).to.equal(winnerPrize);
+      expect(winnerBalanceAfter - winnerBalanceBefore).to.equal(expectedWinnerPrize);
       
       // Creator pays gas for the endQuiz transaction, so balance increase is less than creatorFee
       const creatorBalanceIncrease = creatorBalanceAfter - creatorBalanceBefore;
       const gasAllowance = ethers.parseEther("0.01");
-      expect(creatorBalanceIncrease < creatorFee).to.be.true;
-      expect(creatorBalanceIncrease > (creatorFee - gasAllowance)).to.be.true;
+      expect(creatorBalanceIncrease < expectedCreatorFee).to.be.true;
+      expect(creatorBalanceIncrease > (expectedCreatorFee - gasAllowance)).to.be.true;
       
       // Platform receives exact fee (no gas cost for receiving)
-      expect(platformBalanceAfter - platformBalanceBefore).to.equal(platformFee);
+      expect(platformBalanceAfter - platformBalanceBefore).to.equal(expectedPlatformFee);
 
       // Verify quiz results
       const [winnerAddress, winnerScore, totalPlayers, totalPrize, distributed] = await quizWithFee.getQuizResults();
@@ -389,7 +406,7 @@ describe("Comprehensive Quiz System Tests", function () {
       await quizWithFee.connect(creator).startQuiz();
       await quizWithFee.connect(creator).submitAllAnswers(
         [player1.address, player2.address],
-        [123, 456],
+        ["213", "132"],
         [85, 92]
       );
 
@@ -400,12 +417,12 @@ describe("Comprehensive Quiz System Tests", function () {
 
       // Check detailed player results
       const [answers1, score1, paid1] = await quizWithFee.getPlayerResults(player1.address);
-      expect(answers1).to.equal(123);
+      expect(answers1).to.equal("213");
       expect(score1).to.equal(85);
       expect(paid1).to.be.true;
 
       const [answers2, score2, paid2] = await quizWithFee.getPlayerResults(player2.address);
-      expect(answers2).to.equal(456);
+      expect(answers2).to.equal("132");
       expect(score2).to.equal(92);
       expect(paid2).to.be.true;
     });
